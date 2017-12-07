@@ -1,13 +1,10 @@
 package org.pitest.kotlin
 
 import com.example.NotDestructuringBecauseIAmJava
-import com.example.Result
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.pitest.classpath.ClassloaderByteArraySource;
-import org.pitest.mutationtest.build.intercept.javafeatures.FilterTester
-import org.pitest.mutationtest.engine.gregor.mutators.IncrementsMutator
 import org.pitest.mutationtest.build.InterceptorType
+import org.pitest.mutationtest.build.intercept.javafeatures.FilterTester
 import org.pitest.mutationtest.engine.gregor.config.Mutator
 
 class KotlinSupportTest {
@@ -36,6 +33,12 @@ class KotlinSupportTest {
         verifier.assertFiltersNMutationFromClass(0, NotDestructuringBecauseIAmJava::class.java)
     }
 
+    @Test
+    fun `filters mutations to !! null casts`() {
+        // condtional and intrinsic method call
+        verifier.assertFiltersMutationAtNLocations(2, HasNullCast::class.java)
+    }
+
 }
 
 data class DestructureMe(val a : Int, val b : String, val c : Int)
@@ -48,13 +51,19 @@ class Destructure {
 }
 
 class NotDestructuring {
-
     fun foo(i : Int) {
         component1(i);
     }
 
     private fun component1(i : Int) {
         println("hello" + i)
+    }
+}
+
+class HasNullCast {
+    fun foo(maybeS : String?) {
+        val s = maybeS!!
+        println(s)
     }
 }
 
