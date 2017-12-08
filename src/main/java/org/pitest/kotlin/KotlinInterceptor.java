@@ -79,7 +79,6 @@ public class KotlinInterceptor implements MutationInterceptor {
     Slot<LabelNode> nullJump = Slot.create(LabelNode.class);
     return QueryStart
       .any(AbstractInsnNode.class)
-      .zeroOrMore(QueryStart.match(anyInstruction()))
       .then(opCode(Opcodes.IFNULL).and(jumpsTo(nullJump.write())).and(mutationPoint()))
       .oneOrMore(QueryStart.match(anyInstruction()))
       .then(opCode(Opcodes.GOTO))
