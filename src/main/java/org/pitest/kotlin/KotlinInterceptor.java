@@ -19,6 +19,7 @@ import org.pitest.mutationtest.engine.MutationDetails;
 import org.pitest.sequence.*;
 
 import static org.pitest.bytecode.analysis.InstructionMatchers.*;
+import static org.pitest.bytecode.analysis.InstructionMatchers.anIntegerConstant;
 
 public class KotlinInterceptor implements MutationInterceptor {
 
@@ -39,6 +40,8 @@ public class KotlinInterceptor implements MutationInterceptor {
     .match(Match.<AbstractInsnNode>never())
     .or(destructuringCall())
     .or(nullCast())
+    .or(safeNullCallOrElvis())
+    .or(safeCast())
     .then(containMutation(FOUND))
     .compile(QueryParams.params(AbstractInsnNode.class)
       .withIgnores(IGNORE)
@@ -54,12 +57,44 @@ public class KotlinInterceptor implements MutationInterceptor {
       .zeroOrMore(QueryStart.match(anyInstruction()));
   }
 
+  private static SequenceQuery<AbstractInsnNode> safeCast() {
+    Slot<LabelNode> nullJump = Slot.create(LabelNode.class);
+    return QueryStart
+      .any(AbstractInsnNode.class)
+      .zeroOrMore(QueryStart.match(anyInstruction()))
+      .then(opCode(Opcodes.INSTANCEOF).and(mutationPoint()))
+      .then(opCode(Opcodes.IFNE).and(jumpsTo(nullJump.write()).and(mutationPoint())))
+      .then(opCode(Opcodes.POP))
+      .then(opCode(Opcodes.ACONST_NULL))
+      .then(labelNode(nullJump.read()))
+      .zeroOrMore(QueryStart.match(anyInstruction()));
+  }
+
+
   private static SequenceQuery<AbstractInsnNode> destructuringCall() {
     return QueryStart
       .any(AbstractInsnNode.class)
       .zeroOrMore(QueryStart.match(anyInstruction()))
       .then(aComponentNCall().and(mutationPoint()))
       .zeroOrMore(QueryStart.match(anyInstruction()));
+  }
+
+  private static SequenceQuery<AbstractInsnNode> safeNullCallOrElvis() {
+    Slot<LabelNode> nullJump = Slot.create(LabelNode.class);
+    return QueryStart
+      .any(AbstractInsnNode.class)
+      .zeroOrMore(QueryStart.match(anyInstruction()))
+      .then(opCode(Opcodes.IFNULL).and(jumpsTo(nullJump.write())).and(mutationPoint()))
+      .oneOrMore(QueryStart.match(anyInstruction()))
+      .then(opCode(Opcodes.GOTO))
+      .then(labelNode(nullJump.read()))
+      .then(opCode(Opcodes.POP))
+      .then(aConstant().and(mutationPoint()))
+      .zeroOrMore(QueryStart.match(anyInstruction()));
+  }
+
+  private static Match<AbstractInsnNode> aConstant() {
+    return opCode(Opcodes.ACONST_NULL).or(anIntegerConstant().or(opCode(Opcodes.SIPUSH)).or(opCode(Opcodes.LDC)));
   }
 
   private static Match<AbstractInsnNode> aComponentNCall() {
