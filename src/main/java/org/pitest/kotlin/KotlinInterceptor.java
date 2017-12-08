@@ -38,11 +38,13 @@ public class KotlinInterceptor implements MutationInterceptor {
 
   static final SequenceMatcher<AbstractInsnNode> KOTLIN_JUNK = QueryStart
     .match(Match.<AbstractInsnNode>never())
+    .zeroOrMore(QueryStart.match(anyInstruction()))
     .or(destructuringCall())
     .or(nullCast())
     .or(safeNullCallOrElvis())
     .or(safeCast())
     .then(containMutation(FOUND))
+    .zeroOrMore(QueryStart.match(anyInstruction()))
     .compile(QueryParams.params(AbstractInsnNode.class)
       .withIgnores(IGNORE)
       .withDebug(DEBUG)
@@ -51,32 +53,26 @@ public class KotlinInterceptor implements MutationInterceptor {
   private static SequenceQuery<AbstractInsnNode> nullCast() {
     return QueryStart
       .any(AbstractInsnNode.class)
-      .zeroOrMore(QueryStart.match(anyInstruction()))
       .then(opCode(Opcodes.IFNONNULL).and(mutationPoint()))
-      .then(methodCallTo(ClassName.fromString("kotlin/jvm/internal/Intrinsics"), "throwNpe").and(mutationPoint()))
-      .zeroOrMore(QueryStart.match(anyInstruction()));
+      .then(methodCallTo(ClassName.fromString("kotlin/jvm/internal/Intrinsics"), "throwNpe").and(mutationPoint()));
   }
 
   private static SequenceQuery<AbstractInsnNode> safeCast() {
     Slot<LabelNode> nullJump = Slot.create(LabelNode.class);
     return QueryStart
       .any(AbstractInsnNode.class)
-      .zeroOrMore(QueryStart.match(anyInstruction()))
       .then(opCode(Opcodes.INSTANCEOF).and(mutationPoint()))
       .then(opCode(Opcodes.IFNE).and(jumpsTo(nullJump.write()).and(mutationPoint())))
       .then(opCode(Opcodes.POP))
       .then(opCode(Opcodes.ACONST_NULL))
-      .then(labelNode(nullJump.read()))
-      .zeroOrMore(QueryStart.match(anyInstruction()));
+      .then(labelNode(nullJump.read()));
   }
 
 
   private static SequenceQuery<AbstractInsnNode> destructuringCall() {
     return QueryStart
       .any(AbstractInsnNode.class)
-      .zeroOrMore(QueryStart.match(anyInstruction()))
-      .then(aComponentNCall().and(mutationPoint()))
-      .zeroOrMore(QueryStart.match(anyInstruction()));
+      .then(aComponentNCall().and(mutationPoint()));
   }
 
   private static SequenceQuery<AbstractInsnNode> safeNullCallOrElvis() {
@@ -89,8 +85,7 @@ public class KotlinInterceptor implements MutationInterceptor {
       .then(opCode(Opcodes.GOTO))
       .then(labelNode(nullJump.read()))
       .then(opCode(Opcodes.POP))
-      .then(aConstant().and(mutationPoint()))
-      .zeroOrMore(QueryStart.match(anyInstruction()));
+      .then(aConstant().and(mutationPoint()));
   }
 
   private static Match<AbstractInsnNode> aConstant() {
