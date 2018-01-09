@@ -1,10 +1,12 @@
-# JUnit 5 Plugin 
+# Kotlin  Plugin 
 
-Adds support to pitest for JUnit 5 and the Juniper api.
+Improves pitest's support for Kotlin
+
+This is a work in progress
 
 ## Usage
 
-The plugin requires pitest 1.2.5 or later. It has been built against JUnit 5.0.2 - you may encounter issues if you use it with a different version. 
+The plugin requires pitest 1.3.2 or later. 
 
 To activate the plugin it must be placed on the classpath of the pitest tool (**not** on the classpath of the project being mutated).
 
@@ -19,8 +21,8 @@ e.g for maven
         <dependencies>
           <dependency>
             <groupId>org.pitest</groupId>
-            <artifactId>pitest-junit5-plugin</artifactId>
-            <version>0.2</version>
+            <artifactId>pitest-kotlin-plugin</artifactId>
+            <version>0.1-SNAPSHOT</version>
           </dependency>
         </dependencies>
 
@@ -41,14 +43,14 @@ buildscript {
    configurations.maybeCreate("pitest")
    dependencies {
        classpath 'info.solidsoft.gradle.pitest:gradle-pitest-plugin:1.2.4'
-       pitest 'org.pitest:pitest-junit5-plugin:0.2'
+       pitest 'org.pitest:pitest-kotlin-plugin:0.1-SNAPSHOT'
    }
 }
 
 apply plugin: "info.solidsoft.pitest"
 
 pitest {
-    pitestVersion = "1.2.5"
+    pitestVersion = "1.3.2"
     targetClasses = ['our.base.package.*']  // by default "${project.group}.*"
 }
 ```
@@ -56,4 +58,11 @@ See [gradle-pitest-plugin documentation](http://gradle-pitest-plugin.solidsoft.i
 
 ## About
 
-Plugin originally created by @tobiasstadler.
+When the plugin is enabled pitest will avoid creating junk mutations in code that uses
+
+* de structuring code
+* null casts
+* safe casts
+* elvis operator
+
+
