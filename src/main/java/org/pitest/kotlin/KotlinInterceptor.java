@@ -1,25 +1,38 @@
 package org.pitest.kotlin;
 
+import static org.pitest.bytecode.analysis.InstructionMatchers.anIntegerConstant;
+import static org.pitest.bytecode.analysis.InstructionMatchers.anyInstruction;
+import static org.pitest.bytecode.analysis.InstructionMatchers.jumpsTo;
+import static org.pitest.bytecode.analysis.InstructionMatchers.labelNode;
+import static org.pitest.bytecode.analysis.InstructionMatchers.methodCallTo;
+import static org.pitest.bytecode.analysis.InstructionMatchers.notAnInstruction;
+import static org.pitest.bytecode.analysis.InstructionMatchers.opCode;
+import static org.pitest.bytecode.analysis.InstructionMatchers.recordTarget;
+
 import java.util.Collection;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 import org.pitest.bytecode.analysis.ClassTree;
 import org.pitest.bytecode.analysis.MethodMatchers;
 import org.pitest.bytecode.analysis.MethodTree;
 import org.pitest.classinfo.ClassName;
-import org.pitest.functional.F;
 import org.pitest.functional.FCollection;
-import org.pitest.functional.prelude.Prelude;
 import org.pitest.mutationtest.build.InterceptorType;
 import org.pitest.mutationtest.build.MutationInterceptor;
 import org.pitest.mutationtest.engine.Mutater;
 import org.pitest.mutationtest.engine.MutationDetails;
-import org.pitest.sequence.*;
-
-import static org.pitest.bytecode.analysis.InstructionMatchers.*;
-import static org.pitest.bytecode.analysis.InstructionMatchers.anIntegerConstant;
+import org.pitest.sequence.Context;
+import org.pitest.sequence.Match;
+import org.pitest.sequence.QueryParams;
+import org.pitest.sequence.QueryStart;
+import org.pitest.sequence.SequenceMatcher;
+import org.pitest.sequence.SequenceQuery;
+import org.pitest.sequence.Slot;
 
 public class KotlinInterceptor implements MutationInterceptor {
 
@@ -27,12 +40,8 @@ public class KotlinInterceptor implements MutationInterceptor {
   private boolean isKotlinClass;
 
 
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   
-  private static final Match<AbstractInsnNode> IGNORE = isA(LineNumberNode.class)
-    .or(isA(FrameNode.class)
-    );
-
   private static final Slot<AbstractInsnNode> MUTATED_INSTRUCTION = Slot.create(AbstractInsnNode.class);
   private static final Slot<Boolean> FOUND = Slot.create(Boolean.class);
 
@@ -46,7 +55,7 @@ public class KotlinInterceptor implements MutationInterceptor {
     .then(containMutation(FOUND))
     .zeroOrMore(QueryStart.match(anyInstruction()))
     .compile(QueryParams.params(AbstractInsnNode.class)
-      .withIgnores(IGNORE)
+      .withIgnores(notAnInstruction())
       .withDebug(DEBUG)
     );
 
@@ -123,7 +132,7 @@ public class KotlinInterceptor implements MutationInterceptor {
     if(!isKotlinClass) {
       return mutations;
     }
-    return FCollection.filter(mutations, Prelude.not(isKotlinJunkMutation(currentClass)));
+    return FCollection.filter(mutations, isKotlinJunkMutation(currentClass).negate());
   }
   
   @Override
@@ -134,7 +143,10 @@ public class KotlinInterceptor implements MutationInterceptor {
   @Override
   public void begin(ClassTree clazz) {
     currentClass = clazz;
-    isKotlinClass = clazz.annotations().contains(metaData());
+    isKotlinClass = clazz.annotations().stream()
+        .filter(annotationNode -> annotationNode.desc.equals("Lkotlin/Metadata;"))
+        .findFirst()
+        .isPresent();
   }
 
   @Override
@@ -142,40 +154,26 @@ public class KotlinInterceptor implements MutationInterceptor {
     currentClass = null;
   }
   
-  private static F<MutationDetails, Boolean> isKotlinJunkMutation(final ClassTree currentClass) {
-    return new  F<MutationDetails, Boolean>() {
-      @Override
-      public Boolean apply(MutationDetails a) {
+  private static Predicate<MutationDetails> isKotlinJunkMutation(final ClassTree currentClass) {
+    return a -> {
         int instruction = a.getInstructionIndex();
-        MethodTree method = currentClass.methods().findFirst(MethodMatchers.forLocation(a.getId().getLocation())).value();
-        AbstractInsnNode mutatedInstruction = method.instructions().get(instruction);
+        MethodTree method = currentClass.methods().stream()
+            .filter(MethodMatchers.forLocation(a.getId().getLocation()))
+            .findFirst()
+            .get();
+        AbstractInsnNode mutatedInstruction = method.instruction(instruction);
         Context<AbstractInsnNode> context = Context.start(method.instructions(), DEBUG);
         context.store(MUTATED_INSTRUCTION.write(), mutatedInstruction);
         return KOTLIN_JUNK.matches(method.instructions(), context);
-      }
     };
   }
-
-  private static F<AnnotationNode, Boolean> metaData() {
-    return new  F<AnnotationNode, Boolean>() {
-      @Override
-      public Boolean apply(AnnotationNode annotationNode) {
-        return annotationNode.desc.equals("Lkotlin/Metadata;");
-      }
-    };
-  };
 
   private static Match<AbstractInsnNode> mutationPoint() {
     return recordTarget(MUTATED_INSTRUCTION.read(), FOUND.write());
   }
 
   private static Match<AbstractInsnNode> containMutation(final Slot<Boolean> found) {
-    return new Match<AbstractInsnNode>() {
-      @Override
-      public boolean test(Context<AbstractInsnNode> c, AbstractInsnNode t) {
-        return c.retrieve(found.read()).hasSome();
-      }
-    };
+    return (context, node) ->  context.retrieve(found.read()).isPresent();
   }
 }
 
