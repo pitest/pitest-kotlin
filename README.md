@@ -6,7 +6,7 @@ This is a work in progress
 
 ## Usage
 
-The plugin requires pitest 1.3.2 or later. 
+The plugin requires pitest 1.4.1 or later. 
 
 To activate the plugin it must be placed on the classpath of the pitest tool (**not** on the classpath of the project being mutated).
 
