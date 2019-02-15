@@ -2,7 +2,7 @@
 
 Improves pitest's support for Kotlin
 
-This is a work in progress
+This is a work in progress looking for someone to take over and progress it.
 
 ## Usage
 
