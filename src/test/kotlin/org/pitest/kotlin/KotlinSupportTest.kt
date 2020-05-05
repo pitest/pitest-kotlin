@@ -9,8 +9,8 @@ import org.pitest.mutationtest.engine.gregor.mutators.NullMutateEverything
 
 class KotlinSupportTest {
 
-  val testee = KotlinInterceptor()
-  val verifier = FilterTester("", testee, NullMutateEverything.asList())
+  private val testee = KotlinInterceptor()
+  private val verifier = FilterTester("", testee, NullMutateEverything.asList())
 
 
   @Test
@@ -88,11 +88,11 @@ class Destructure {
 
 class NotDestructuring {
   fun foo(i: Int) {
-    component1(i);
+    component1(i)
   }
 
   private fun component1(i: Int) {
-    println("hello" + i)
+    println("hello$i")
   }
 }
 
@@ -155,7 +155,7 @@ class HasElvisWithMethodCall {
 }
 
 class HasSafeCast {
-  fun foo(o : Object) : String? {
+  fun foo(o : Any) : String? {
     return o as? String
   }
 }
