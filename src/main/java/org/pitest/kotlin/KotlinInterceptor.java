@@ -39,7 +39,6 @@ public class KotlinInterceptor implements MutationInterceptor {
   private ClassTree currentClass;
   private boolean isKotlinClass;
 
-
   private static final boolean DEBUG = false;
   
   private static final Slot<AbstractInsnNode> MUTATED_INSTRUCTION = Slot.create(AbstractInsnNode.class);

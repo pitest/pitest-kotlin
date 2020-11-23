@@ -2,7 +2,7 @@ package org.pitest.kotlin
 
 import com.example.NotDestructuringBecauseIAmJava
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.pitest.mutationtest.build.InterceptorType
 import org.pitest.mutationtest.build.intercept.javafeatures.FilterTester
 import org.pitest.mutationtest.engine.gregor.mutators.NullMutateEverything
@@ -11,7 +11,6 @@ class KotlinSupportTest {
 
   private val testee = KotlinInterceptor()
   private val verifier = FilterTester("", testee, NullMutateEverything.asList())
-
 
   @Test
   fun `declares type as filter`() {
