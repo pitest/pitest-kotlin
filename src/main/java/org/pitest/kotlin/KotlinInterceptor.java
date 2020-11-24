@@ -143,9 +143,7 @@ public class KotlinInterceptor implements MutationInterceptor {
   public void begin(ClassTree clazz) {
     currentClass = clazz;
     isKotlinClass = clazz.annotations().stream()
-        .filter(annotationNode -> annotationNode.desc.equals("Lkotlin/Metadata;"))
-        .findFirst()
-        .isPresent();
+        .anyMatch(annotationNode -> annotationNode.desc.equals("Lkotlin/Metadata;"));
   }
 
   @Override
