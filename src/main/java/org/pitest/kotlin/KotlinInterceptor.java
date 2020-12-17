@@ -51,7 +51,7 @@ public class KotlinInterceptor implements MutationInterceptor {
     .or(nullCast())
     .or(safeNullCallOrElvis())
     .or(safeCast())
-    .then(containMutation(FOUND))
+    .then(containMutation())
     .zeroOrMore(QueryStart.match(anyInstruction()))
     .compile(QueryParams.params(AbstractInsnNode.class)
       .withIgnores(notAnInstruction())
@@ -62,7 +62,7 @@ public class KotlinInterceptor implements MutationInterceptor {
     return QueryStart
       .any(AbstractInsnNode.class)
       .then(opCode(Opcodes.IFNONNULL).and(mutationPoint()))
-      .then(methodCallTo(ClassName.fromString("kotlin/jvm/internal/Intrinsics"), "throwNpe").and(mutationPoint()));
+      .then(methodCallTo(ClassName.fromString("kotlin/jvm/internal/Intrinsics"), "throwJavaNpe").and(mutationPoint()));
   }
 
   private static SequenceQuery<AbstractInsnNode> safeCast() {
@@ -169,8 +169,8 @@ public class KotlinInterceptor implements MutationInterceptor {
     return recordTarget(MUTATED_INSTRUCTION.read(), FOUND.write());
   }
 
-  private static Match<AbstractInsnNode> containMutation(final Slot<Boolean> found) {
-    return (context, node) ->  context.retrieve(found.read()).isPresent();
+  private static Match<AbstractInsnNode> containMutation() {
+    return (context, node) ->  context.retrieve(KotlinInterceptor.FOUND.read()).isPresent();
   }
 }
 

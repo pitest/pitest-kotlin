@@ -33,9 +33,8 @@ class KotlinSupportTest {
   }
 
   @Test
-  fun `filters mutations to !! null casts`() {
-    // condtional and intrinsic method call
-    verifier.assertFiltersMutationAtNLocations(2, HasNullCast::class.java)
+  fun `does not filter mutations to !! null casts as it throws the java NPE`() {
+    verifier.assertFiltersMutationAtNLocations(0, HasNullCast::class.java)
   }
 
   @Test
