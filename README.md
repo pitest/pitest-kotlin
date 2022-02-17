@@ -4,7 +4,7 @@ Improves pitest's support for Kotlin
 
 This is a work in progress looking for someone to take over and progress it.
 
-**UPDATE** - There has been little progress on an open source kotlin plugin, but GroupCDG are now looking for beta testers for a closed source version. If you're interested in helping kotlin support happen, please contact pitest.demo@groupcdg.com.
+**UPDATE** - There has been little progress on an open source kotlin plugin, but GroupCDG are now looking for beta testers for a closed source version. If you're interested in helping kotlin support happen, please contact support@arcmutate.com.
 
 ## Usage
 
