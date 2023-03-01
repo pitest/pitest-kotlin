@@ -8,6 +8,8 @@ This is a work in progress looking for someone to take over and progress it.
 
 https://docs.arcmutate.com/docs/kotlin.html
 
+This offers a significantly better exeperience when mutating Kotlin than the plugin here, with support for inline functions and many other language features.
+
 ## Usage
 
 The plugin requires pitest 1.4.1 or later. 
